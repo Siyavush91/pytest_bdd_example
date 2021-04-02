@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.idea/
+.DS_Store
+.vscode
+.allure-report
+
+# Environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+bot/*
+.tests/test_validator_admin/allure-report
+/allure-report
+movie.mp4
+/video_screenshots
+/helpers/project_logger/logs
+/allure-reports/*
+/allure-results/*
+helpers/project_logger/logs/pytest-logs.txt

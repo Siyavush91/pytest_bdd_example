@@ -1,0 +1,77 @@
+version: "3.8"
+networks:
+  midhub_dev:
+    external: true
+
+services:
+  pytest-runner:
+    build: .docker/pytest-runner-20
+    container_name: pytest-runner
+    environment:
+      - SELENIUM_HUB_URL=http://selenium-hub:4444/wd/hub
+#      Set target host in your docker-compose.override.yml
+      - CORE_RPC_HOST_EXTERNAL=http://core-rpc:3700/
+      - NOTARY_WEB_HOST_EXTERNAL=http://notary_nginx/
+    volumes: 
+      - .:/src
+    networks:
+      - midhub_dev
+
+  chrome-headless:
+#    use selenium/node-chrome if you don't want to connect to the container via VNC
+    image: selenium/node-chrome-debug
+    container_name: chrome-headless
+    hostname: chrome-headless
+    depends_on:
+      - selenium-hub
+    environment:
+      CHROME_STRING: '--unsafely-treat-insecure-origin-as-secure=http://swarm_nginx,ws://eth-node-nginx:8546,http://eth-node-nginx:8545,http://client-backend-nginx,http://service-cdp:3010,http://service-cdp_nginx,http://client-api:10130,http://core-rpc:3700,http://notary_nginx'
+      HUB_PORT_4444_TCP_ADDR: selenium-hub
+      HUB_PORT_4444_TCP_PORT: 4444
+      NODE_MAX_SESSION: 15
+      NODE_MAX_INSTANCES: 4
+      SE_EVENT_BUS_HOST: selenium-hub
+      SE_EVENT_BUS_PUBLISH_PORT: 4442
+      SE_EVENT_BUS_SUBSCRIBE_PORT: 4443
+#      GRID_DEBUG: 'true'
+    ports:
+      - "9001:5900"
+    networks:
+      - midhub_dev
+#    you can use it in your docker-compose.override.yml on linux
+#    volumes:
+#      - /dev/shm:/dev/shm
+
+  selenium-hub:
+    image: selenium/hub
+    container_name: selenium-hub
+    hostname: selenium-hub
+    environment:
+      SE_OPTS: "-timeout 120 -browserTimeout 240 -cleanUpCycle 360"
+#      GRID_DEBUG: 'true'
+    networks:
+      - midhub_dev
+
+
+  allure:
+    image: "frankescobar/allure-docker-service"
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 1
+      KEEP_HISTORY: 1
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./allure-results:/app/allure-results
+      - ./allure-reports:/app/default-reports
+    networks:
+      - midhub_dev
+
+  allure-ui:
+    image: "frankescobar/allure-docker-service-ui"
+    environment:
+      ALLURE_DOCKER_PUBLIC_API_URL: "http://localhost:5050"
+      ALLURE_DOCKER_PUBLIC_API_URL_PREFIX: ""
+    ports:
+      - "5252:5252"
+    networks:
+      - midhub_dev
